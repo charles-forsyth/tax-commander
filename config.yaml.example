@@ -47,5 +47,9 @@ system:
   bill_output_dir: "tax_bills"
   log_file: "tax_commander.log"
 
+gemini:
+  api_key: "YOUR_GEMINI_API_KEY_HERE"
+  model: "gemini-3-pro-preview"
+
 defaults:
   bill_issue_date: "2025-03-01"
