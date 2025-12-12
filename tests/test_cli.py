@@ -16,7 +16,7 @@ def test_init_db(temp_env):
     res = run_cli(["init-db"], cwd=temp_env)
     assert res.returncode == 0
     assert "Database initialized successfully" in res.stdout
-    assert os.path.exists(os.path.join(temp_env, "tioga_tax.db"))
+    assert os.path.exists(os.path.join(temp_env, "tax_commander.db"))
 
 def test_import_duplicate_and_pay_discount(temp_env):
     # 1. Init
@@ -39,7 +39,7 @@ def test_import_duplicate_and_pay_discount(temp_env):
     
     # Verify in DB
     # We must construct a DBManager or connect manually to the temp db
-    db_path = os.path.join(temp_env, "tioga_tax.db")
+    db_path = os.path.join(temp_env, "tax_commander.db")
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     row = conn.execute("SELECT * FROM transactions WHERE parcel_id='P-001'").fetchone()
@@ -66,7 +66,7 @@ def test_pay_penny_short_rejection(temp_env):
     assert "UNDERPAYMENT" in res.stdout
     
     # Verify Rejection Logged
-    db_path = os.path.join(temp_env, "tioga_tax.db")
+    db_path = os.path.join(temp_env, "tax_commander.db")
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     row = conn.execute("SELECT * FROM transactions WHERE parcel_id='P-004'").fetchone()

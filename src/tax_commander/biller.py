@@ -34,11 +34,11 @@ class TaxBiller:
         org = self.org_config.get('organization', self.org_config)
         contact = self.org_config.get('contact', {})
         
-        collector_name = org.get('collector_name', 'Charles Forsyth')
+        collector_name = org.get('collector_name', 'Tax Collector Name')
         collector_title = org.get('collector_title', 'Tax Collector')
-        address = org.get('mailing_address', '1539 Button Hill Road')
-        city_zip = org.get('city_state_zip', 'Tioga, PA 16946')
-        township_name = org.get('township_name', 'TIOGA TOWNSHIP')
+        address = org.get('mailing_address', '123 Main St')
+        city_zip = org.get('city_state_zip', 'City, State Zip')
+        township_name = org.get('township_name', 'MUNICIPALITY NAME')
         
         # Filename
         suffix = f"_{date_suffix}" if date_suffix else ""

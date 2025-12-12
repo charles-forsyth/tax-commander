@@ -3,7 +3,7 @@
 # Simulation Run: "The Gauntlet"
 # Tests the Tax Commander against the edge cases defined in the plan.
 
-DB_FILE="tioga_tax.db"
+DB_FILE="tax_commander.db"
 CMD="tax-commander"
 export TAX_COMMANDER_TEST_MODE=1
 

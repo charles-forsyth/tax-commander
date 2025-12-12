@@ -70,8 +70,8 @@ class TaxReporter:
 
         # Get Bank Account Details
         bank_accounts = self.config.get('bank_accounts', {})
-        township_bank = bank_accounts.get('township', {'name': 'Tioga Township', 'account_number': 'N/A'})
-        county_bank = bank_accounts.get('county', {'name': 'Tioga County', 'account_number': 'N/A'})
+        township_bank = bank_accounts.get('township', {'name': 'Township General Fund', 'account_number': 'N/A'})
+        county_bank = bank_accounts.get('county', {'name': 'County Tax Account', 'account_number': 'N/A'})
         school_bank = bank_accounts.get('school_district', {'name': 'School District', 'account_number': 'N/A'})
 
         print("\n[Remittance Advice - WRITE THESE CHECKS]")
@@ -276,10 +276,11 @@ class TaxReporter:
         """
         # Retrieve Config
         org = self.config.get('organization', {})
-        collector_name = org.get('collector_name', 'Charles Forsyth')
+        collector_name = org.get('collector_name', 'Tax Collector Name')
         collector_title = org.get('collector_title', 'Tax Collector')
-        township_name = org.get('township_name', 'TIOGA TOWNSHIP')
-        city_zip = org.get('city_state_zip', 'Tioga, PA 16946')
+        township_name = org.get('township_name', 'MUNICIPALITY NAME')
+        city_zip = org.get('city_state_zip', 'City, State Zip')
+        address = org.get('mailing_address', '123 Main St')
         
         # Output directory
         output_dir = "rejection_notices"
@@ -294,7 +295,7 @@ class TaxReporter:
         c.drawCentredString(width / 2, 10.0 * inch, f"{township_name.upper()} TAX OFFICE")
         c.setFont("Helvetica", 12)
         c.drawCentredString(width / 2, 9.8 * inch, f"{collector_name}, {collector_title}")
-        c.drawCentredString(width / 2, 9.6 * inch, f"1539 Button Hill Rd, {city_zip}") # Default address for now
+        c.drawCentredString(width / 2, 9.6 * inch, f"{address}, {city_zip}")
         
         c.line(1.0 * inch, 9.4 * inch, 7.5 * inch, 9.4 * inch)
         
