@@ -502,15 +502,14 @@ def main():
             db.disconnect()
 
     elif args.command == 'status':
-        print("\n--- Generating Real-Time Status Report ---")
+        console.rule("[bold blue]Real-Time Collection Status Report")
         db.connect()
         
-        # 1. High-Level Totals
         try:
+            # 1. High-Level Totals
             total_parcels = db.conn.execute("SELECT COUNT(*) FROM tax_duplicate").fetchone()[0]
             total_face_value = db.conn.execute("SELECT SUM(face_tax_amount) FROM tax_duplicate").fetchone()[0] or 0.0
             total_collected = db.conn.execute("SELECT SUM(amount_paid) FROM transactions WHERE transaction_type='PAYMENT'").fetchone()[0] or 0.0
-            
             percent_collected = (total_collected / total_face_value * 100) if total_face_value > 0 else 0.0
 
             # 2. Status Breakdown
@@ -531,22 +530,56 @@ def main():
 
             db.disconnect()
 
-            # Build Report Text (Markdown)
+            # --- RICH OUTPUT ---
+            # KPI Grid
+            kpi_table = Table(show_header=False, box=None)
+            kpi_table.add_row(
+                f"[bold]Total Parcels:[/bold] {total_parcels}",
+                f"[bold]Face Value:[/bold] ${total_face_value:,.2f}"
+            )
+            kpi_table.add_row(
+                f"[bold]Collected YTD:[/bold] [green]${total_collected:,.2f}[/green]",
+                f"[bold]Collection Rate:[/bold] [magenta]{percent_collected:.1f}%[/magenta]"
+            )
+            console.print(Panel(kpi_table, title="High-Level Summary", border_style="blue"))
+
+            # Status Breakdown Table
+            status_table = Table(title="Parcel Status Breakdown", show_header=True)
+            status_table.add_column("Status")
+            status_table.add_column("Count")
+            for status, count in status_dict.items():
+                color = "white"
+                if status == 'PAID': color = "green"
+                elif status == 'UNPAID': color = "red"
+                status_table.add_row(f"[{color}]{status}[/]", str(count))
+            console.print(status_table)
+
+            # Revenue Table
+            rev_table = Table(title="Revenue by Tax Type", show_header=True)
+            rev_table.add_column("Tax Type")
+            rev_table.add_column("Parcels Paid")
+            rev_table.add_column("Amount Collected", justify="right")
+            
+            if not type_stats:
+                 rev_table.add_row("(No Payments Yet)", "-", "-")
+            else:
+                for row in type_stats:
+                    rev_table.add_row(row[0], str(row[2]), f"${row[1]:,.2f}")
+            console.print(rev_table)
+
+            # --- FILE OUTPUT (Markdown) ---
             report_lines = []
             report_lines.append(f"# Tax Collection Status Report")
             report_lines.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
-            
             report_lines.append("## 1. High-Level Summary")
             report_lines.append(f"*   **Total Parcels:** {total_parcels}")
             report_lines.append(f"*   **Total Face Value:** ${total_face_value:,.2f}")
             report_lines.append(f"*   **Total Collected (YTD):** ${total_collected:,.2f}")
             report_lines.append(f"*   **Collection Rate:** {percent_collected:.1f}%")
-
             report_lines.append("## 2. Parcel Status Breakdown")
             for status, count in status_dict.items():
                 report_lines.append(f"*   **{status}:** {count} parcels")
             report_lines.append("")
-
             report_lines.append("## 3. Revenue by Tax Type")
             report_lines.append("| Tax Type | Parcels Paid | Amount Collected |")
             report_lines.append("| :--- | :---: | :---: |")
@@ -555,24 +588,15 @@ def main():
             else:
                 for row in type_stats:
                     report_lines.append(f"| {row[0]} | {row[2]} | ${row[1]:,.2f} |")
-            report_lines.append("")
-
-            report_lines.append("## 4. Operational Notes")
-            report_lines.append(f"*   Run `report` command for detailed monthly remittance.")
-            report_lines.append(f"*   Run `return-list` to export unpaid parcels.")
-
-            full_report = "\n".join(report_lines)
             
-            # Output to Console
-            print(full_report)
-            
-            # Save to File
             filename = f"Status_Report_{datetime.now().strftime('%Y-%m-%d')}.md"
             with open(filename, "w") as f:
-                f.write(full_report)
-            print(f"\nStatus report saved to: {filename}")
+                f.write("\n".join(report_lines))
+            
+            console.print(f"\n[dim]Status report saved to: {filename}[/dim]")
+
         except Exception as e:
-            print(f"Error generating status report: {e}")
+            console.print(f"[bold red]Error generating status report:[/bold red] {e}")
             if db.conn: db.disconnect()
 
     elif args.command == 'export-labels':
