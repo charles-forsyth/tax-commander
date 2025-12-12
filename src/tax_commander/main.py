@@ -22,6 +22,7 @@ from .reporter import TaxReporter
 from .biller import TaxBiller
 from .printer import PrintManager, LabelGenerator
 from .self_check import SelfCheckRunner
+from .sample_data import generate_sample_csv
 
 # Setup Rich Console
 custom_theme = Theme({
@@ -229,6 +230,13 @@ def main():
 
     # 26. Self-Check (Installation Verification)
     subparsers.add_parser('self-check', help='Run a safe, automated simulation to verify installation')
+
+    # 27. Reset DB
+    reset_parser = subparsers.add_parser('reset-db', help='DANGER: Delete and re-initialize the database')
+    reset_parser.add_argument('--force', action='store_true', help='Skip confirmation')
+
+    # 28. Load Sample Data
+    subparsers.add_parser('load-sample-data', help='Generate and import sample tax duplicate')
 
     args = parser.parse_args()
     
@@ -816,6 +824,71 @@ def main():
     elif args.command == 'self-check':
         runner = SelfCheckRunner(config)
         runner.run()
+
+    elif args.command == 'reset-db':
+        if not args.force:
+            console.print("[bold red]⚠️  WARNING: This will DELETE all data (transactions, receipts, etc).[/]")
+            confirm = input("Type 'DELETE' to confirm: ")
+            if confirm != "DELETE":
+                console.print("Operation cancelled.")
+                sys.exit(0)
+        
+        if db.conn:
+            db.disconnect()
+            
+        if os.path.exists(db_path):
+            try:
+                os.remove(db_path)
+                console.print(f"[yellow]Deleted existing database: {db_path}[/yellow]")
+            except Exception as e:
+                console.print(f"[bold red]Error deleting database: {e}[/bold red]")
+                sys.exit(1)
+        
+        # Re-init
+        DBManager(db_path=db_path, schema_path=schema_path)
+        console.print("[bold green]Database reset successfully.[/bold green]")
+
+    elif args.command == 'load-sample-data':
+        try:
+            csv_path = generate_sample_csv("sample_duplicate.csv")
+            console.print(f"Generated sample data: [bold]{csv_path}[/bold]")
+            
+            # Reuse import logic via subprocess to avoid duplicating the CSV parsing logic in main
+            # or refactor import logic. Refactoring is better but subprocess is safer for now.
+            # Actually, calling the same logic is easy if I extract it.
+            # But for now, I will just replicate the import logic here as it's short.
+            
+            db.backup_db()
+            console.print(f"Importing sample data...")
+            db.connect()
+            with open(csv_path, 'r') as f:
+                reader = csv.DictReader(f)
+                count = 0
+                for row in reader:
+                    db.conn.execute("""
+                        INSERT OR REPLACE INTO tax_duplicate 
+                        (parcel_id, owner_name, property_address, mailing_address, bill_number, 
+                         assessment_value, homestead_exclusion, farmstead_exclusion, 
+                         face_tax_amount, discount_amount, penalty_amount,
+                         tax_type, bill_issue_date, is_installment_plan)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        row['parcel_id'], row['owner_name'], row['property_address'], 
+                        row.get('mailing_address', row['property_address']),
+                        row['bill_number'],
+                        row['assessment_value'], 
+                        row.get('homestead_exclusion', 0.0),
+                        row.get('farmstead_exclusion', 0.0),
+                        row['face_tax_amount'], row['discount_amount'], row['penalty_amount'],
+                        row['tax_type'], row.get('bill_issue_date', default_issue_date), int(row.get('is_installment_plan', 0))
+                    ))
+                    count += 1
+                db.conn.commit()
+                console.print(f"[bold green]Successfully imported {count} sample records.[/bold green]")
+        except Exception as e:
+            console.print(f"[bold red]Error loading sample data: {e}[/bold red]")
+        finally:
+            db.disconnect()
 
     else:
         parser.print_help()
