@@ -15,6 +15,7 @@ dependencies = [
     "pymupdf",
     "pyyaml",
     "python-dateutil",
+    "google-generativeai",
 ]
 
 [project.optional-dependencies]

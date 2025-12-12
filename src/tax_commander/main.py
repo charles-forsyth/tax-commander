@@ -214,7 +214,7 @@ def main():
     
     db = DBManager(db_path=db_path, schema_path=schema_path)
     calc = TaxCalculator(default_issue_date=default_issue_date)
-    ingest_manager = IngestManager(db)
+    ingest_manager = IngestManager(db, config)
     reporter = TaxReporter(db, config)
     biller = TaxBiller(output_dir=bill_output_dir, org_config=config)
     printer = PrintManager(config)

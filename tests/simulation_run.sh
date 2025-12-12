@@ -5,6 +5,7 @@
 
 DB_FILE="tioga_tax.db"
 CMD="tax-commander"
+export TAX_COMMANDER_TEST_MODE=1
 
 echo "=========================================="
 echo "PHASE 0: FLIGHT SIMULATOR STARTING"

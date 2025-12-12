@@ -1,68 +1,111 @@
 import json
 import os
+import google.generativeai as genai
+import PIL.Image
 from datetime import datetime
 from .db_manager import DBManager
 
 class IngestManager:
-    def __init__(self, db_manager):
+    def __init__(self, db_manager, config):
         self.db = db_manager
+        self.config = config
+        # Load API Key from Config or Environment (Env takes precedence for security)
+        self.api_key = os.environ.get('GEMINI_API_KEY') or config.get('gemini', {}).get('api_key')
+        self.model_name = config.get('gemini', {}).get('model', 'gemini-3-pro-preview')
 
     def process_image(self, image_path):
         """
-        Simulates processing an image (e.g., check) using a Gemini-like model
-        to extract payment details.
-        
-        In a real scenario, this would involve:
-        1. Loading the image.
-        2. Sending to Gemini API with a prompt.
-        3. Parsing the JSON response.
-
-        For this simulation, we will prompt the user for the extracted data.
+        Processes an image (check) using the configured Gemini model.
         """
-        print(f"\n--- Simulating image processing for {image_path} ---")
-        print("Please provide the extracted information (simulating Gemini output):")
+        # --- TEST MODE HOOK ---
+        if os.environ.get('TAX_COMMANDER_TEST_MODE'):
+            print(f"🧪 TEST MODE: Simulating ingestion for {image_path}")
+            return {
+                "check_number": "1001",
+                "amount": 441.00,
+                "postmark_date": "2025-04-20",
+                "payer_name": "Simulated Payer",
+                "payer_address": "10 Main St",
+                "found_parcel_id": "P-010"
+            }
+        # ----------------------
+
+        print(f"\n--- Ingesting Image: {image_path} ---")
         
-        # --- MOCK GEMINI OUTPUT for demonstration ---
-        # In a real scenario, this data would come from the Gemini API call
-        # For now, we'll use a hardcoded example or prompt the user.
+        if not self.api_key or self.api_key == "YOUR_GEMINI_API_KEY_HERE":
+            print("❌ Error: Gemini API Key not configured.")
+            print("Please set GEMINI_API_KEY env var or update config.yaml.")
+            return None
 
-        # Example: Simulating a payment for P-010
-        extracted_data = {
-            "check_number": "1001",
-            "amount": "441.00",
-            "postmark_date": "2025-04-20",
-            "payer_name": "Simulated Payer",
-            "payer_address": "10 Main St",
-            "found_parcel_id": "P-010" # This would be from fuzzy match or direct OCR
-        }
-        # --- END MOCK ---
+        if not os.path.exists(image_path):
+            print(f"❌ Error: Image file not found at {image_path}")
+            return None
 
-        # Simulate user confirmation/override
-        confirmed_data = self._confirm_extracted_data(extracted_data)
-        if not confirmed_data:
-            return None # User cancelled
+        try:
+            genai.configure(api_key=self.api_key)
+            model = genai.GenerativeModel(self.model_name)
+            
+            img = PIL.Image.open(image_path)
+            
+            prompt = """
+            Analyze this image of a check or payment document.
+            Extract the following details into a JSON object:
+            - check_number (string)
+            - amount (number, no currency symbols)
+            - postmark_date (string, YYYY-MM-DD format. If not visible, use today's date)
+            - payer_name (string)
+            - payer_address (string)
+            - memo (string, often contains the Parcel ID)
+            
+            Only return the raw JSON string, no markdown formatting.
+            """
+            
+            print(f"🤖 Sending to {self.model_name}...")
+            response = model.generate_content([prompt, img])
+            
+            # Clean response (sometimes returns ```json ... ```)
+            raw_text = response.text.replace('```json', '').replace('```', '').strip()
+            extracted_data = json.loads(raw_text)
+            
+            # Add logic to find Parcel ID from memo or name
+            extracted_data['found_parcel_id'] = self._find_parcel_id(extracted_data)
+            
+            # Confirm with user
+            return self._confirm_extracted_data(extracted_data)
 
-        # Fuzzy match and duplicate protection logic will be here, after initial extraction
-        # For now, we'll assume the 'found_parcel_id' is correct for the mock.
-        parcel_id = confirmed_data["found_parcel_id"]
+        except Exception as e:
+            print(f"❌ AI Ingestion Failed: {e}")
+            return None
 
-        # Check for duplicates
-        if self._check_for_duplicate_payment(parcel_id, confirmed_data["check_number"], float(confirmed_data["amount"])):
-            print("WARNING: Potential duplicate payment detected! Review manually.")
-            if not input("Do you wish to proceed anyway? (yes/no): ").lower() == 'yes':
-                return None
-
-        return confirmed_data
+    def _find_parcel_id(self, data):
+        """
+        Attempts to find the Parcel ID from the extracted memo or payer info.
+        In a real app, this would query the DB for name matches.
+        """
+        memo = data.get('memo', '')
+        # Simple heuristic: Look for P-XXX in memo
+        if memo and 'P-' in memo:
+            parts = memo.split()
+            for part in parts:
+                if part.startswith('P-'):
+                    return part.strip()
+        
+        # Fallback: Ask DB for name match (Simplified for now)
+        # self.db.connect()
+        # ... query ...
+        # self.db.disconnect()
+        
+        return "UNKNOWN (Please Enter)"
 
     def _confirm_extracted_data(self, data):
         """
         Presents extracted data to the user for confirmation and allows overrides.
         """
-        print("Extracted Data:")
+        print("\n📝 Extracted Data:")
         for key, value in data.items():
             print(f"  {key}: {value}")
         
-        confirm = input("Is this data correct? (yes/no/edit): ").lower()
+        confirm = input("\nIs this data correct? (yes/no/edit): ").lower()
         if confirm == 'yes':
             return data
         elif confirm == 'edit':
@@ -88,46 +131,3 @@ class IngestManager:
         is_duplicate = cursor.fetchone()[0] > 0
         self.db.disconnect()
         return is_duplicate
-
-    def _fuzzy_match_parcel(self, payer_name, payer_address):
-        """
-        Simulates fuzzy matching to find a parcel ID based on payer info.
-        In a real system, this would query the tax_duplicate table.
-        For now, we'll return a hardcoded value for demonstration.
-        """
-        # Placeholder for actual fuzzy matching logic
-        # For simulation, assume we found 'P-010'
-        return "P-010"
-
-# Example usage (for testing this module directly)
-if __name__ == "__main__":
-    # This part would typically be called from tax_commander.py
-    db_manager = DBManager()
-    ingest_manager = IngestManager(db_manager)
-    
-    # Generate some dummy data for the DB if it doesn't exist
-    if not os.path.exists("tioga_tax.db"): # Check if DB exists, if not, generate dummy data for testing
-        print("No database found. Generating dummy data for testing ingest_manager.")
-        # You'd typically run generate_dummy_data.py and import it here
-        # For a simple test, let's add one record manually
-        db_manager.connect()
-        db_manager.conn.execute("""
-            INSERT OR IGNORE INTO tax_duplicate 
-            (parcel_id, owner_name, property_address, bill_number, 
-             assessment_value, face_tax_amount, discount_amount, penalty_amount,
-             tax_type, bill_issue_date, is_installment_plan)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            "P-010", "Simulated Payer", "10 Main St", "B2025010",
-            100000.0, 450.00, 441.00, 495.00,
-            "Real Estate", "2025-03-01", 0
-        ))
-        db_manager.conn.commit()
-        db_manager.disconnect()
-
-    extracted_info = ingest_manager.process_image("path/to/check_image.jpg")
-    if extracted_info:
-        print("Ingestion successful!")
-        print(extracted_info)
-    else:
-        print("Ingestion cancelled or failed.")
