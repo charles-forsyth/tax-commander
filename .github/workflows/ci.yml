@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v1
+
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        uv venv
+        uv pip install .[dev]
+
+    - name: Run Pytest
+      run: uv run pytest tests/test_cli.py
+
+    - name: Run The Gauntlet (Legacy Simulation)
+      run: |
+        # Ensure the tool is installed globally or accessible for the shell script
+        # The shell script uses 'tax-commander'. 
+        # We can install it as a tool or just run it via 'uv run' if we update the script.
+        # But for now, let's install it as a tool in the CI environment
+        uv tool install .
+        bash tests/simulation_run.sh

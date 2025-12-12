@@ -17,6 +17,13 @@ dependencies = [
     "python-dateutil",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
+
 [project.scripts]
 tax-commander = "tax_commander.main:main"
 
