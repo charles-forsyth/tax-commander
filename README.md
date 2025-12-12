@@ -174,5 +174,10 @@ Tax Commander is **municipality-agnostic**. Open `~/.config/tax-commander/config
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to set up the dev environment and run the test suite.
 
+## 🎞️ Development History
+*(Visualized with Gource)*
+
+![Development History](tax_commander_history.gif)
+
 ## 📜 License
 MIT © [Charles E. Forsyth III](LICENSE)
