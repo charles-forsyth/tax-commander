@@ -16,7 +16,7 @@ def load_config(config_path="config.yaml"):
         return {}
 
 config = load_config()
-db_path = config.get('system', {}).get('database_file', 'tioga_tax.db')
+db_path = config.get('system', {}).get('database_file', 'tax_commander.db')
 
 # --- Helper Functions ---
 def get_db_connection():
