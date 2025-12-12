@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import argcomplete
 import csv
 import sys
 import yaml
@@ -238,6 +239,7 @@ def main():
     # 28. Load Sample Data
     subparsers.add_parser('load-sample-data', help='Generate and import sample tax duplicate')
 
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
     
     db = DBManager(db_path=db_path, schema_path=schema_path)
