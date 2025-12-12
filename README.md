@@ -24,6 +24,7 @@ Managing municipal taxes with spreadsheets is a recipe for disaster. **Tax Comma
 
 | Feature | Description |
 | :--- | :--- |
+| **🎨 Beautiful CLI** | Interactive tables, colored status indicators, and progress spinners powered by **Rich**. |
 | **🤖 AI Check Ingestion** | Take a photo of a check. **Gemini 3 Pro** extracts the amount, date, and Parcel ID automatically. |
 | **🛡️ Audit-Proof Ledger** | Immutable transaction logging. Every penny is tracked. No "accidental" deletions. |
 | **⚖️ Auto-Compliance** | Automatically enforces 2% Discount, Face, and 10% Penalty periods based on postmark. |
@@ -46,21 +47,32 @@ mkdir -p ~/.config/tax-commander
 curl -o ~/.config/tax-commander/config.yaml https://raw.githubusercontent.com/charles-forsyth/tax-commander/master/config.yaml.example
 ```
 
-### Option 2: Development Setup
+---
+
+## ⚡ Quick Start (Demo Mode)
+
+Want to try it out without importing real data?
+
 ```bash
-git clone https://github.com/charles-forsyth/tax-commander.git
-cd tax-commander
-uv venv
-source .venv/bin/activate
-uv pip install -e .
+# 1. Initialize DB
+tax-commander init-db
+
+# 2. Load Sample Data (90+ fake properties)
+tax-commander load-sample-data
+
+# 3. Process a Payment
+tax-commander pay --parcel P-001 --amount 441.00 --date 2025-04-15
+
+# 4. View the Dashboard
+tax-commander dashboard
 ```
 
 ---
 
 ## 📖 Usage Guide
 
-### 1. Initial Setup
-Start a new tax year by initializing the database and importing the "duplicate" (the master list of taxable properties from the County).
+### 1. Initial Setup (Real World)
+Start a new tax year by initializing the database and importing your actual "duplicate" (CSV from the County).
 ```bash
 tax-commander init-db
 tax-commander import-duplicate path/to/county_export.csv
@@ -118,6 +130,12 @@ tax-commander nsf <TRANSACTION_ID>
 Process an official exoneration (tax forgiveness) for indigent residents or errors.
 ```bash
 tax-commander exonerate --parcel P-099 --amount 50.00 --date 2025-05-01 --reason "Indigent"
+```
+
+**Reset Database**
+Made a mistake during testing? Wipe everything and start over (requires confirmation).
+```bash
+tax-commander reset-db
 ```
 
 ### 5. Monthly Reporting
