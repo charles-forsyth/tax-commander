@@ -12,8 +12,7 @@
 
 ## 📸 Screenshots
 
-*(Add a screenshot of the Web Dashboard here)*
-*(Add a screenshot of a generated PDF Bill here)*
+*(Screenshots coming soon)*
 
 ---
 
@@ -49,25 +48,87 @@ curl -o ~/.config/tax-commander/config.yaml https://raw.githubusercontent.com/ch
 
 ---
 
-## ⚡ Quick Start
+## 📖 Usage Guide
 
-**1. Initialize a New Year**
+### 1. Initial Setup
+Start a new tax year by initializing the database and importing the "duplicate" (the master list of taxable properties from the County).
 ```bash
 tax-commander init-db
 tax-commander import-duplicate path/to/county_export.csv
 ```
 
-**2. Process a Payment (AI Mode)**
+### 2. Daily Payment Processing
+
+**Option A: Manual Entry**
+Standard payment recording. The system validates the amount against the current period (Discount/Face/Penalty).
 ```bash
-# Point to a check image
+tax-commander pay --parcel P-001 --amount 441.00 --date 2025-04-15
+```
+
+**Option B: AI Check Ingestion 🤖**
+Simply point the tool at an image of a check. It handles the typing for you.
+```bash
 tax-commander ingest check_image.jpg
 ```
-*> System validates amount, date, and duplicate payment checks instantly.*
 
-**3. Close the Month**
+**Option C: Installment Plans**
+For residents paying in installments (if enabled).
 ```bash
+tax-commander pay --parcel P-001 --amount 150.00 --date 2025-04-15 --installment-num 1
+```
+
+### 3. Generating Documents
+
+**Issue Receipts**
+Generate a formal "Certificate of Payment" PDF for a resident.
+```bash
+tax-commander receipt <TRANSACTION_ID>
+```
+
+**Bank Deposit Slips**
+Generate a manifest for your bank run.
+```bash
+tax-commander deposit-slip 2025-04-20
+```
+
+**Reprinting Bills**
+Lost bill? No problem.
+```bash
+tax-commander reprint-bill --parcel P-001
+```
+
+### 4. Handling Exceptions
+
+**Bounced Checks (NSF)**
+Record a reversal for a bounced check. This keeps the ledger accurate without deleting history.
+```bash
+tax-commander nsf <TRANSACTION_ID>
+```
+
+**Exonerations**
+Process an official exoneration (tax forgiveness) for indigent residents or errors.
+```bash
+tax-commander exonerate --parcel P-099 --amount 50.00 --date 2025-05-01 --reason "Indigent"
+```
+
+### 5. Monthly Reporting
+At the end of every month, generate your DCED report and close the books.
+
+```bash
+# 1. View the Dashboard
+tax-commander dashboard
+
+# 2. Generate Report & Remittance Advice
 tax-commander report --month 04 --year 2025
+
+# 3. Lock the Month
 tax-commander close-month --month 04 --year 2025
+```
+
+### 6. End of Year
+Generate the "Turnover Report" (Lien List) for the Tax Claim Bureau.
+```bash
+tax-commander turnover-report
 ```
 
 ---
