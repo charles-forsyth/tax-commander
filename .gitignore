@@ -19,3 +19,4 @@ Return_List_*.csv
 Status_Report_*.md
 Turnover_Report_*.xlsx
 .DS_Store
+config.yaml
