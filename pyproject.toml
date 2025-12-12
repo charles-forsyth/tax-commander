@@ -17,6 +17,7 @@ dependencies = [
     "python-dateutil",
     "google-generativeai",
     "rich",
+    "argcomplete",
 ]
 
 [project.optional-dependencies]
