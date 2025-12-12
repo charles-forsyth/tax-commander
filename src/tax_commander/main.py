@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 
 import argparse
 import argcomplete
@@ -107,7 +108,12 @@ def main():
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
 
-    parser = argparse.ArgumentParser(description="Tax Commander CLI")
+    desc = """Tax Commander CLI
+
+To enable tab completion (Bash):
+  eval "$(register-python-argcomplete tax-commander)"
+"""
+    parser = argparse.ArgumentParser(description=desc, formatter_class=argparse.RawDescriptionHelpFormatter)
     
     # Mode Selection
     subparsers = parser.add_subparsers(dest='command', help='Commands')
