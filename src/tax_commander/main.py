@@ -581,7 +581,8 @@ def main():
         script_dir = os.path.dirname(os.path.abspath(__file__))
         dashboard_path = os.path.join(script_dir, "dashboard.py")
         try:
-            subprocess.run(["streamlit", "run", dashboard_path], check=True)
+            # Use sys.executable to ensure we use the environment where streamlit is installed
+            subprocess.run([sys.executable, "-m", "streamlit", "run", dashboard_path], check=True)
         except KeyboardInterrupt:
             print("\nDashboard closed.")
         except Exception as e:
