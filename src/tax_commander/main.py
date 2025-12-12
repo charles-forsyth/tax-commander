@@ -10,6 +10,10 @@ import os
 import glob
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from rich.console import Console
+from rich.theme import Theme
+from rich.table import Table
+from rich.panel import Panel
 
 from .db_manager import DBManager
 from .calculator import TaxCalculator
@@ -18,6 +22,18 @@ from .reporter import TaxReporter
 from .biller import TaxBiller
 from .printer import PrintManager, LabelGenerator
 from .self_check import SelfCheckRunner
+
+# Setup Rich Console
+custom_theme = Theme({
+    "info": "cyan",
+    "warning": "yellow",
+    "error": "bold red",
+    "success": "bold green",
+    "header": "bold blue",
+    "key": "bold magenta",
+    "value": "white"
+})
+console = Console(theme=custom_theme)
 
 def load_config(config_path=None):
     """
@@ -676,41 +692,47 @@ def main():
                 face_end = issue_date + relativedelta(months=4) - timedelta(days=1)
                 penalty_start = face_end + timedelta(days=1)
 
-                print("\n" + "="*60)
-                print(f" TAXPAYER STATUS CARD: {p['parcel_id']}")
-                print(f" Report Date: {datetime.now().strftime('%Y-%m-%d')}")
-                print("="*60)
-                print(f" Owner:      {p['owner_name']}")
-                print(f" Property:   {p['property_address']}")
-                print(f" Mailing:    {p['mailing_address']}")
-                print(f" Bill #:     {p['bill_number']} ({p['tax_type']})")
-                print(f" Issue Date: {p['bill_issue_date']}")
-                print("-" * 60)
-                print(f" Assessment: ${p['assessment_value']:,.2f}")
-                print("-" * 60)
-                print(f" DISCOUNT:   ${p['discount_amount']:,.2f}  (Ends: {discount_end})")
-                print(f" FACE:       ${p['face_tax_amount']:,.2f}  (Ends: {face_end})")
-                print(f" PENALTY:    ${p['penalty_amount']:,.2f}  (Starts: {penalty_start})")
+                # Build Data Table
+                grid = Table.grid(expand=True)
+                grid.add_column()
+                grid.add_column(justify="right")
+                
+                grid.add_row(f"[key]Owner:[/key] {p['owner_name']}", f"[key]Parcel ID:[/key] {p['parcel_id']}")
+                grid.add_row(f"[key]Property:[/key] {p['property_address']}", f"[key]Bill #:[/key] {p['bill_number']}")
+                grid.add_row(f"[key]Mailing:[/key] {p['mailing_address']}", f"[key]Assessment:[/key] ${p['assessment_value']:,.2f}")
+                
+                # Period Table
+                period_table = Table(show_header=True, header_style="bold magenta")
+                period_table.add_column("Period")
+                period_table.add_column("Amount")
+                period_table.add_column("Dates")
+                
+                period_table.add_row("Discount", f"${p['discount_amount']:,.2f}", f"Until {discount_end}")
+                period_table.add_row("Face", f"${p['face_tax_amount']:,.2f}", f"Until {face_end}")
+                period_table.add_row("Penalty", f"${p['penalty_amount']:,.2f}", f"From {penalty_start}")
                 
                 if p.get('is_installment_plan'):
-                    print("-" * 60)
-                    print(" INSTALLMENT PLAN (Optional):")
                     inst_amount = round(p['face_tax_amount'] / 3, 2)
-                    print(f"   Payment 1: ${inst_amount:,.2f}")
-                    print(f"   Payment 2: ${inst_amount:,.2f}")
-                    print(f"   Payment 3: ${inst_amount:,.2f}")
+                    period_table.add_section()
+                    period_table.add_row("Installment 1", f"${inst_amount:,.2f}", "By Face Deadline")
+                    period_table.add_row("Installment 2", f"${inst_amount:,.2f}", "By Face Deadline")
+                    period_table.add_row("Installment 3", f"${inst_amount:,.2f}", "By Penalty Start")
 
-                # Generate Status Paragraph
+                # Generate Status Message
                 status_msg = ""
                 today = datetime.now().date()
+                status_color = "red"
                 
                 if p['status'] == 'PAID':
-                    status_msg = "This bill has been PAID IN FULL. No further action is required."
+                    status_msg = "This bill has been [bold green]PAID IN FULL[/]. No further action is required."
+                    status_color = "green"
                 elif p['status'] == 'EXONERATED':
-                    status_msg = "This bill has been EXONERATED. No balance is due."
+                    status_msg = "This bill has been [bold]EXONERATED[/]. No balance is due."
+                    status_color = "white"
                 elif p['status'] == 'RETURNED':
-                    status_msg = "This bill remains UNPAID and has been RETURNED to the County Tax Claim Bureau for collection."
-                else: # UNPAID or PARTIAL
+                    status_msg = "This bill remains [bold red]UNPAID[/] and has been [bold red]RETURNED[/] to the County."
+                else:
+                    if p['status'] == 'PARTIAL': status_color = "yellow"
                     if today <= discount_end:
                         amount_due = p['discount_amount']
                         period_name = "DISCOUNT"
@@ -721,40 +743,47 @@ def main():
                         amount_due = p['penalty_amount']
                         period_name = "PENALTY"
                     
-                    status_msg = f"This bill is currently UNPAID. We are in the {period_name} period.\n The total amount due TODAY is ${amount_due:,.2f}."
-                    
-                    if p.get('is_installment_plan'):
-                         status_msg += "\n Alternatively, if eligible, an installment payment may be made."
+                    status_msg = f"This bill is currently [bold {status_color}]{p['status']}[/]. We are in the [bold]{period_name}[/] period.\nThe total amount due TODAY is [bold]${amount_due:,.2f}[/]."
 
-                print("-" * 60)
-                print(f" CURRENT STATUS: [{p['status']}]")
-                print(f" {status_msg}")
-                print("-" * 60)
+                # Transactions Table
+                tx_table = Table(title="Transaction History", expand=True, border_style="dim")
+                tx_table.add_column("Date")
+                tx_table.add_column("Type")
+                tx_table.add_column("Method")
+                tx_table.add_column("Amount", justify="right")
+                tx_table.add_column("Notes")
                 
-                if not txs:
-                    print(" No transactions recorded.")
-                else:
-                    print(f" {'Date':<12} | {'Type':<16} | {'Method':<8} | {'Amount':<10} | {'Notes'}")
-                    print("-" * 80)
+                if txs:
                     for t in txs:
-                        amt = f"${t['amount_paid']:,.2f}"
-                        notes = t['notes'] if t['notes'] else ''
-                        
-                        # Format notes: Check number first if exists, then any other notes
-                        display_notes = []
-                        if t['check_number']:
-                            display_notes.append(f"Ck#{t['check_number']}")
-                        if notes:
-                            display_notes.append(notes)
-                        
-                        notes_str = " | ".join(display_notes)
+                        notes = t['notes'] or ""
+                        if t['check_number'] and t['check_number'] != 'CASH': notes = f"Ck#{t['check_number']} " + notes
+                        tx_table.add_row(
+                            str(t['date_received']),
+                            t['transaction_type'],
+                            t['payment_method'] or "-",
+                            f"${t['amount_paid']:,.2f}",
+                            notes
+                        )
+                else:
+                    tx_table.add_row("-", "No transactions", "-", "-", "-")
 
-                        # Truncate notes if extremely long
-                        if len(notes_str) > 50:
-                            notes_str = notes_str[:47] + "..."
-
-                        print(f" {t['date_received']:<12} | {t['transaction_type']:<16} | {t['payment_method'] or '-':<8} | {amt:<10} | {notes_str}")
-                print("="*60 + "\n")
+                # Print Panel
+                from rich.console import Group
+                console.print(Panel(
+                    Group(
+                        grid, 
+                        "\n", 
+                        period_table, 
+                        "\n",
+                        f"[bold {status_color}]STATUS: {p['status']}[/]",
+                        status_msg,
+                        "\n",
+                        tx_table
+                    ),
+                    title=f"Taxpayer Status: {p['parcel_id']}",
+                    subtitle=f"Report Date: {datetime.now().strftime('%Y-%m-%d')}",
+                    border_style="blue"
+                ))
         except Exception as e:
             print(f"Error looking up parcel: {e}")
         finally:

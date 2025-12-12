@@ -2,8 +2,11 @@ import json
 import os
 import google.generativeai as genai
 import PIL.Image
+from rich.console import Console
 from datetime import datetime
 from .db_manager import DBManager
+
+console = Console()
 
 class IngestManager:
     def __init__(self, db_manager, config):
@@ -30,15 +33,15 @@ class IngestManager:
             }
         # ----------------------
 
-        print(f"\n--- Ingesting Image: {image_path} ---")
+        console.print(f"\n[bold blue]📸 Ingesting Image:[/bold blue] {image_path}")
         
         if not self.api_key or self.api_key == "YOUR_GEMINI_API_KEY_HERE":
-            print("❌ Error: Gemini API Key not configured.")
-            print("Please set GEMINI_API_KEY env var or update config.yaml.")
+            console.print("[bold red]❌ Error: Gemini API Key not configured.[/bold red]")
+            console.print("Please set GEMINI_API_KEY env var or update config.yaml.")
             return None
 
         if not os.path.exists(image_path):
-            print(f"❌ Error: Image file not found at {image_path}")
+            console.print(f"[bold red]❌ Error: Image file not found at {image_path}[/bold red]")
             return None
 
         try:
@@ -60,8 +63,8 @@ class IngestManager:
             Only return the raw JSON string, no markdown formatting.
             """
             
-            print(f"🤖 Sending to {self.model_name}...")
-            response = model.generate_content([prompt, img])
+            with console.status(f"[bold green]🤖 Asking {self.model_name} to analyze check...", spinner="dots"):
+                response = model.generate_content([prompt, img])
             
             # Clean response (sometimes returns ```json ... ```)
             raw_text = response.text.replace('```json', '').replace('```', '').strip()
@@ -74,7 +77,7 @@ class IngestManager:
             return self._confirm_extracted_data(extracted_data)
 
         except Exception as e:
-            print(f"❌ AI Ingestion Failed: {e}")
+            console.print(f"[bold red]❌ AI Ingestion Failed:[/bold red] {e}")
             return None
 
     def _find_parcel_id(self, data):

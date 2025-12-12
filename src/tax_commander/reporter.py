@@ -5,6 +5,10 @@ import os
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+from rich.console import Console
+from rich.table import Table
+
+console = Console()
 
 class TaxReporter:
     def __init__(self, db_manager, config=None):
@@ -15,7 +19,7 @@ class TaxReporter:
         """
         Generates a summary for the DCED Monthly Report and Remittance Advice.
         """
-        print(f"\n--- Monthly Report for {month}/{year} ---")
+        console.rule(f"[bold blue]Monthly Report for {month}/{year}")
         
         # Define date range
         start_date = f"{year}-{month:02d}-01"
@@ -36,14 +40,20 @@ class TaxReporter:
         self.db.disconnect()
 
         if df.empty:
-            print("No transactions found for this period.")
+            console.print("[yellow]No transactions found for this period.[/yellow]")
             return
 
         # 1. Summarize by Tax Type and Period
         summary = df.groupby(['tax_type', 'payment_period'])['amount_paid'].sum().reset_index()
         
-        print("\n[Collection Summary]")
-        print(summary.to_string(index=False))
+        table = Table(title="Collection Summary", show_header=True)
+        table.add_column("Tax Type")
+        table.add_column("Period")
+        table.add_column("Amount", justify="right")
+        
+        for index, row in summary.iterrows():
+            table.add_row(row['tax_type'], row['payment_period'], f"${row['amount_paid']:,.2f}")
+        console.print(table)
 
         # 2. Calculate Remittances (Simplified Logic for Phase 1)
         total_collected = df['amount_paid'].sum()
@@ -74,28 +84,34 @@ class TaxReporter:
         county_bank = bank_accounts.get('county', {'name': 'County Tax Account', 'account_number': 'N/A'})
         school_bank = bank_accounts.get('school_district', {'name': 'School District', 'account_number': 'N/A'})
 
-        print("\n[Remittance Advice - WRITE THESE CHECKS]")
-        print(f"1. {township_bank['name']}:   ${total_township_remittance:,.2f} (Acct: {township_bank['account_number']})")
-        print(f"2. {county_bank['name']}:     ${total_county_remittance:,.2f} (Acct: {county_bank['account_number']})")
-        print(f"3. {school_bank['name']}:  ${total_school_remittance:,.2f} (Acct: {school_bank['account_number']})")
-        print(f"TOTAL REMITTED:      ${total_collected:,.2f}")
-
-        # Add a BIG FAT WARNING for the user in the report itself:
-        print("\n⚠️  **WARNING: REMITTANCE PERCENTAGES ARE ESTIMATES!**")
-        print("⚠️  **UPDATE `config.yaml` WITH ACTUAL MILLAGE RATES BEFORE FIRST LIVE DEPOSIT.**\n")
+        # Remittance Table
+        remit_table = Table(title="Remittance Advice - WRITE THESE CHECKS", show_header=True, header_style="bold green")
+        remit_table.add_column("Entity")
+        remit_table.add_column("Account #")
+        remit_table.add_column("Amount", justify="right")
+        
+        remit_table.add_row(township_bank['name'], township_bank['account_number'], f"${total_township_remittance:,.2f}")
+        remit_table.add_row(county_bank['name'], county_bank['account_number'], f"${total_county_remittance:,.2f}")
+        remit_table.add_row(school_bank['name'], school_bank['account_number'], f"${total_school_remittance:,.2f}")
+        remit_table.add_section()
+        remit_table.add_row("[bold]TOTAL REMITTED[/]", "", f"[bold]${total_collected:,.2f}[/]")
+        
+        console.print(remit_table)
+        console.print("\n[bold yellow]⚠️  WARNING: REMITTANCE PERCENTAGES ARE ESTIMATES![/]")
+        console.print("[dim]Update `config.yaml` with actual millage rates before first live deposit.[/dim]\n")
 
         # 3. DCED Specifics (Exonerations/Returns)
         exonerations = df[df['transaction_type'] == 'EXONERATION']['amount_paid'].sum()
         returns = df[df['transaction_type'] == 'RETURN']['amount_paid'].sum()
         
-        print(f"\n[DCED Report Adjustments]")
-        print(f"Line 6 (Exonerations): ${exonerations:,.2f}")
-        print(f"Line 7 (Returns):      ${returns:,.2f}")
+        console.print(f"\n[bold]DCED Report Adjustments[/]")
+        console.print(f"Line 6 (Exonerations): [bold]${exonerations:,.2f}[/]")
+        console.print(f"Line 7 (Returns):      [bold]${returns:,.2f}[/]")
 
         # Export to CSV for record
         filename = f"Monthly_Report_{year}_{month:02d}.csv"
         df.to_csv(filename, index=False)
-        print(f"\nDetailed transaction list saved to: {filename}")
+        console.print(f"\nDetailed transaction list saved to: [bold green]{filename}[/]")
 
     def generate_return_list(self):
         """
