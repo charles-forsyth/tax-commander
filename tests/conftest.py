@@ -28,7 +28,7 @@ def db(temp_env):
     """
     Initializes a fresh database in the temp environment.
     """
-    db_file = "test_tioga_tax.db"
+    db_file = "test_tax_commander.db"
     # We need to locate the schema. Since we are installed/local, 
     # we can try to find it in the original source or let DBManager find it via bundle.
     

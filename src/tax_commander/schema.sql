@@ -42,7 +42,7 @@ CREATE TABLE transactions (
 CREATE TABLE remittances (
     remittance_id INTEGER PRIMARY KEY,
     date_sent TEXT,
-    recipient TEXT, -- 'Tioga Township', 'County', 'School Dist'
+    recipient TEXT, -- 'Township', 'County', 'School Dist'
     amount REAL,
     check_number_from_you TEXT,
     period_covered TEXT

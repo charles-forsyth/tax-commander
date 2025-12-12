@@ -38,7 +38,8 @@ def load_data():
     return df_parcels, df_transactions
 
 # --- Main Dashboard ---
-st.title("📊 Tioga Township Tax Collector Dashboard")
+municipality = config.get('organization', {}).get('township_name', 'Municipality')
+st.title(f"📊 {municipality} Tax Collector Dashboard")
 st.markdown(f"**Date:** {datetime.now().strftime('%Y-%m-%d')}")
 
 try:
@@ -110,8 +111,8 @@ else:
 
 # --- Quick Links / Info ---
 with st.expander("ℹ️ About This Dashboard"):
-    st.write("""
-    This dashboard provides a real-time view of the Tioga Township tax collection database.
+    st.write(f"""
+    This dashboard provides a real-time view of the {municipality} tax collection database.
     - **Total Face Value:** Sum of all face amounts in the duplicate.
     - **Total Collected:** Sum of all valid payments received.
     - **Charts:** Generated dynamically from current data.

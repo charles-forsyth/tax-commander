@@ -1,22 +1,20 @@
 # Tax Commander Configuration
 
 organization:
-  township_name: "Tioga Township"
-  collector_name: "Charles E. Forsyth III" # Updated to formal name for official docs
+  township_name: "Your Municipality Name"
+  collector_name: "Tax Collector Name"
   collector_title: "Tax Collector"
-  # Update this address if you switch to a PO Box:
-  mailing_address: "1539 Button Hill Road"
-  city_state_zip: "Tioga, PA 16946"
+  mailing_address: "123 Main St"
+  city_state_zip: "City, State 12345"
 
 contact:
-  email: "chuck.forsyth@gmail.com"
-  phone: "(607) 341-4420" # Updated with your official office number
+  email: "collector@example.com"
+  phone: "(555) 555-5555"
   # Message shown on the bill about drop-off options:
-  drop_box_message: "🔒 24/7 Secure Drop Box Available at the Town Office Building"
+  drop_box_message: "🔒 24/7 Secure Drop Box Available at the Municipal Building"
   qr_code:
     enabled: true
     subject_template: "Tax Inquiry - Parcel {parcel_id}"
-    # New: Template for the email body. Use \n for new lines.
     body_template: "Hello Tax Collector,\n\nI am writing regarding Parcel {parcel_id}.\n\nPlease assist me with:\n[ ] Requesting a receipt\n[ ] Updating my mailing address\n[ ] Question about my bill\n\nMy phone number is: _________________\n\nThank you,\n{owner_name}"
 
 financial:
@@ -31,25 +29,25 @@ financial:
 
 bank_accounts:
   township:
-    name: "Tioga Township General Fund"
+    name: "Municipality General Fund"
     account_number: "123456789"
   county:
-    name: "Tioga County Tax Account"
+    name: "County Tax Account"
     account_number: "987654321"
   school_district:
-    name: "Tioga School District Taxes"
+    name: "School District Taxes"
     account_number: "112233445"
 
 system:
-  database_file: "tioga_tax.db"
+  database_file: "tax_commander.db"
   schema_file: "schema.sql"
   backup_dir: "backups"
   bill_output_dir: "tax_bills"
   log_file: "tax_commander.log"
 
+defaults:
+  bill_issue_date: "2025-03-01"
+
 gemini:
   api_key: "YOUR_GEMINI_API_KEY_HERE"
   model: "gemini-3-pro-preview"
-
-defaults:
-  bill_issue_date: "2025-03-01"

@@ -66,7 +66,7 @@ def test_pay_penny_short_rejection(temp_env):
     assert "UNDERPAYMENT" in res.stdout
     
     # Verify Rejection Logged
-    db_path = os.path.join(temp_env, "tioga_tax.db")
+    db_path = os.path.join(temp_env, "tax_commander.db")
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     row = conn.execute("SELECT * FROM transactions WHERE parcel_id='P-004'").fetchone()

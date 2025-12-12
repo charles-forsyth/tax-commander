@@ -67,7 +67,7 @@ def main():
     org_conf = config.get('organization', {})
     def_conf = config.get('defaults', {})
 
-    db_path = sys_conf.get('database_file', 'tioga_tax.db')
+    db_path = sys_conf.get('database_file', 'tax_commander.db')
     
     schema_path = sys_conf.get('schema_file')
     
