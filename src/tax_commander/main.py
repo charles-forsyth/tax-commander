@@ -17,6 +17,7 @@ from .ingest import IngestManager
 from .reporter import TaxReporter
 from .biller import TaxBiller
 from .printer import PrintManager, LabelGenerator
+from .self_check import SelfCheckRunner
 
 def load_config(config_path=None):
     """
@@ -209,6 +210,9 @@ def main():
     # 25. Lookup (Customer Service View)
     lookup_parser = subparsers.add_parser('lookup', help='Lookup Parcel Details & History')
     lookup_parser.add_argument('term', help='Parcel ID or Owner Name (partial)')
+
+    # 26. Self-Check (Installation Verification)
+    subparsers.add_parser('self-check', help='Run a safe, automated simulation to verify installation')
 
     args = parser.parse_args()
     
@@ -755,6 +759,10 @@ def main():
             print(f"Error looking up parcel: {e}")
         finally:
             db.disconnect()
+
+    elif args.command == 'self-check':
+        runner = SelfCheckRunner(config)
+        runner.run()
 
     else:
         parser.print_help()
