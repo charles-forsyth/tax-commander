@@ -39,11 +39,20 @@ Tax Commander is managed with `uv` for lightning-fast installation.
 
 ```bash
 # 1. Install Tool
-uv tool install git+ssh://git@github.com/charles-forsyth/tax-commander.git
+uv tool install git+https://github.com/charles-forsyth/tax-commander.git
 
 # 2. Initialize Config
 mkdir -p ~/.config/tax-commander
 curl -o ~/.config/tax-commander/config.yaml https://raw.githubusercontent.com/charles-forsyth/tax-commander/master/config.yaml.example
+```
+
+### Option 2: Development Setup
+```bash
+git clone https://github.com/charles-forsyth/tax-commander.git
+cd tax-commander
+uv venv
+source .venv/bin/activate
+uv pip install -e .
 ```
 
 ---
