@@ -1,136 +1,120 @@
-# 🦅 Tax Commander: Tioga Township Tax Collection System
+# 🦅 Tax Commander
 
-**Version:** 1.1.0 (Production Ready)  
-**Role:** Tax Collector Operations Platform  
-**Owner:** Charles E. Forsyth III, Tax Collector
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Status](https://img.shields.io/badge/status-production--ready-green.svg)]()
 
----
+**Tax Commander** is a professional-grade, audit-proof tax collection system designed for Pennsylvania Municipal Tax Collectors. It replaces fragile spreadsheets with a robust CLI tool that enforces strict compliance with PA Act 48 (Discount/Face/Penalty periods), automates paperwork, and provides real-time financial transparency.
 
-## 📖 Overview
-**Tax Commander** is a specialized CLI (Command Line Interface) system designed to automate, audit, and secure the tax collection process for Tioga Township. It replaces manual spreadsheets with a database-backed, audit-proof engine that handles calculations, receipts, and state-mandated reporting (PA Act 48 compliant).
-
-### Key Capabilities
-*   **Audit-Proof:** Every transaction is logged. You can't "accidentally" delete money.
-*   **Strict Compliance:** Enforces exact payments (Discount/Face/Penalty). Rejects "penny-short" checks automatically.
-*   **Automated Paperwork:** Generates professional PDF Bills (with QR codes), Certificates of Payment (Receipts), Deposit Slips, and Monthly DCED Reports.
-*   **Strategic Dashboard:** Real-time web view for Supervisor meetings.
-*   **Modern Contact:** Bills include a "Scan to Email" QR code and Drop Box information.
+> **Role:** Operations Platform for Tioga Township  
+> **Owner:** Charles E. Forsyth III, Tax Collector
 
 ---
 
-## ⚙️ Setup & Configuration
+## 🚀 Key Features
 
-### 1. Prerequisites
-*   Python 3.12+
-*   Dependencies: `pip install -r requirements.txt` (includes `pandas`, `reportlab`, `streamlit`, `openpyxl`, `plotly`, `qrcode[pil]`, `pymupdf`)
-
-### 2. Configuration (`config.yaml`)
-**CRITICAL:** Before processing real payments, open `config.yaml` and verify:
-*   **Contact Info:** Update email, phone, and address (supports PO Box).
-*   **Millage Rates:** Ensure Township, County, and School millage match the current year's resolution.
-*   **Bank Accounts:** Update the "Account Number" fields for the Remittance Reports.
-
-### 3. Initialization
-If starting fresh for a new year:
-```bash
-python3 tax_commander.py init-db
-python3 tax_commander.py import-duplicate path/to/county_file.csv
-```
+*   **🛡️ Audit-Proof Ledger:** Immutable transaction logging. Every penny is tracked; nothing can be "accidentally" deleted.
+*   **⚖️ Strict Compliance:** automatically calculates and enforces Discount (2%), Face, and Penalty (10%) periods based on postmark dates.
+*   **📄 Automated Documents:** Generates professional PDF Tax Bills (with QR codes), Certificates of Payment (Receipts), and Deposit Slips.
+*   **📊 Monthly Reporting:** One-click generation of DCED-compliant Monthly Remittance Reports and check-writing advice.
+*   **📈 Supervisor Dashboard:** Built-in web interface for real-time visualization of collection progress.
+*   **🖨️ Batch Printing:** Integrated CUPS support for mass printing of bills and Avery 5160 mailing labels.
 
 ---
 
-## ☀️ Daily Operations (Processing Mail)
+## 📥 Installation
 
-### 1. Recording a Payment
-When you open an envelope:
-```bash
-python3 tax_commander.py pay --parcel <PARCEL_ID> --amount <AMOUNT> --date <POSTMARK_DATE> --check <CHECK_NUM>
-```
-*   **Validation:** The system will reject the payment if it doesn't match the exact amount due for that date.
-*   **Installments:** Use `--installment-num 1` (or 2/3).
+Tax Commander is a Python package managed with `uv`.
 
-### 2. Generating a Receipt
-If a resident requests a receipt:
-```bash
-python3 tax_commander.py receipt <TRANSACTION_ID>
-```
-*   Generates a formal PDF **Certificate of Payment** in the `receipts/` folder.
+### Option 1: Global Installation (Recommended)
+Install it once and run it from anywhere on your system.
 
-### 3. Creating a Deposit Slip
-Before going to the bank:
 ```bash
-python3 tax_commander.py deposit-slip <YYYY-MM-DD>
+# Using uv (Recommended)
+uv tool install git+ssh://git@github.com/charles-forsyth/tax-commander.git
+
+# Or using pip
+pip install git+ssh://git@github.com/charles-forsyth/tax-commander.git
 ```
 
-### 4. Updating Parcel Info (Move/Sale)
-If a resident moves or name changes:
+### Option 2: Development Setup
 ```bash
-python3 tax_commander.py update-parcel --parcel <ID> --name "New Name" --address "New Address"
+git clone git@github.com:charles-forsyth/tax-commander.git
+cd tax-commander
+uv venv
+source .venv/bin/activate
+uv pip install -e .
 ```
 
 ---
 
-## 📅 Monthly Operations (Reporting)
+## ⚙️ Configuration
 
-### 1. The "Supervisor Dashboard"
-Before your monthly meeting, check your stats:
+1.  **Create Config Directory:**
+    ```bash
+    mkdir -p ~/.config/tax-commander
+    ```
+2.  **Copy Template:**
+    Download the example config and save it to the folder above.
+    ```bash
+    curl -o ~/.config/tax-commander/config.yaml https://raw.githubusercontent.com/charles-forsyth/tax-commander/master/config.yaml.example
+    ```
+3.  **Edit Details:**
+    Open `config.yaml` and set your:
+    *   **Millage Rates** (Township, County, School)
+    *   **Bank Account Numbers**
+    *   **Contact Information**
+
+---
+
+## 📖 Usage Guide
+
+### Initial Setup
+Start a new tax year by initializing the database and importing the "duplicate" (the master list of taxable properties from the County).
 ```bash
-python3 tax_commander.py dashboard
+tax-commander init-db
+tax-commander import-duplicate path/to/county_export.csv
 ```
-*   Opens a web page with charts and totals.
 
-### 2. Monthly Remittance Report
-At the end of the month (e.g., April):
+### Daily Workflow
+**1. Record a Payment**
 ```bash
-python3 tax_commander.py report --month 4 --year 2025
+tax-commander pay --parcel P-001 --amount 441.00 --date 2025-04-15
 ```
-*   Generates `Monthly_Report_YYYY_MM.csv` and prints check-writing advice.
+*   *Note: The system rejects payments that don't match the exact amount due for the given date.*
 
-### 3. Closing the Month
-Once reports are filed:
+**2. Generate Receipt**
 ```bash
-python3 tax_commander.py close-month --month 4 --year 2025
+tax-commander receipt <TRANSACTION_ID>
+```
+
+**3. Create Deposit Slip**
+```bash
+tax-commander deposit-slip 2025-04-20
+```
+
+### Monthly Workflow
+**1. View Dashboard**
+```bash
+tax-commander dashboard
+```
+
+**2. Close the Month & Generate Reports**
+```bash
+tax-commander report --month 04 --year 2025
+tax-commander close-month --month 04 --year 2025
 ```
 
 ---
 
-## 🗓️ Yearly/Special Operations
+## 🧪 Testing
+The project includes "The Gauntlet"—a simulation script that runs the system through an entire tax year of edge cases (interim bills, penalties, partial payments, exonerations).
 
-### 1. Printing Tax Bills
-To generate PDF bills for mailing:
 ```bash
-python3 tax_commander.py generate-bills --type Township_County
-```
-*   Outputs to `tax_bills/`. Bills include QR codes and Drop Box info.
-
-### 2. Printing Labels
-To print address labels (Avery 5160):
-```bash
-python3 tax_commander.py export-labels
-python3 tax_commander.py print-labels --printer "Canon_Printer_Name"
-```
-
-### 3. Batch Printing Bills
-To print a whole folder of bills:
-```bash
-python3 tax_commander.py print-bills --folder tax_bills/2025-03_Township_County/ --printer "Canon_Printer_Name"
-```
-
-### 4. End-of-Year Turnover (Lien List)
-On Jan 15, generate the list for the Tax Claim Bureau:
-```bash
-python3 tax_commander.py turnover-report
+bash tests/simulation_run.sh
 ```
 
 ---
 
-## 🛡️ Administrative Tools
-
-*   **Audit Log:** `python3 tax_commander.py audit`
-*   **Exoneration:** `python3 tax_commander.py exonerate ...`
-*   **NSF (Bounced Check):** `python3 tax_commander.py nsf <TX_ID>`
-*   **List Printers:** `python3 tax_commander.py list-printers`
-
----
-
-**Note:** Always backup your `tioga_tax.db` file regularly. The system automatically creates backups in `backups/` before major operations.
+## 📜 License
+This project is licensed under the [MIT License](LICENSE).
