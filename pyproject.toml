@@ -1,0 +1,31 @@
+[project]
+name = "tax-commander"
+version = "1.1.0"
+description = "Tioga Township Tax Collection System"
+authors = [{name = "Charles E. Forsyth III", email = "chuck.forsyth@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas",
+    "reportlab",
+    "streamlit",
+    "openpyxl",
+    "plotly",
+    "qrcode[pil]",
+    "pymupdf",
+    "pyyaml",
+    "python-dateutil",
+]
+
+[project.scripts]
+tax-commander = "tax_commander.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tax_commander"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/tax_commander/schema.sql" = "tax_commander/schema.sql"

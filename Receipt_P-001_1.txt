@@ -1,0 +1,19 @@
+
+        ========================================
+        OFFICIAL TAX RECEIPT - TIOGA TOWNSHIP
+        ========================================
+        Date: 2025-11-27 23:38:31
+        Receipt #: 1
+        
+        Parcel ID:      P-001
+        Owner:          Resident 1
+        Property:       1 Main St
+        
+        Amount Paid:    $441.00
+        Payment Period: DISCOUNT
+        Check Number:   CASH
+        
+        Status: PA ID IN FULL (Verified)
+        ========================================
+        Tax Collector: Charles Forsyth
+        

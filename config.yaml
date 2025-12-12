@@ -1,0 +1,51 @@
+# Tax Commander Configuration
+
+organization:
+  township_name: "Tioga Township"
+  collector_name: "Charles E. Forsyth III" # Updated to formal name for official docs
+  collector_title: "Tax Collector"
+  # Update this address if you switch to a PO Box:
+  mailing_address: "1539 Button Hill Road"
+  city_state_zip: "Tioga, PA 16946"
+
+contact:
+  email: "chuck.forsyth@gmail.com"
+  phone: "(607) 341-4420" # Updated with your official office number
+  # Message shown on the bill about drop-off options:
+  drop_box_message: "🔒 24/7 Secure Drop Box Available at the Town Office Building"
+  qr_code:
+    enabled: true
+    subject_template: "Tax Inquiry - Parcel {parcel_id}"
+    # New: Template for the email body. Use \n for new lines.
+    body_template: "Hello Tax Collector,\n\nI am writing regarding Parcel {parcel_id}.\n\nPlease assist me with:\n[ ] Requesting a receipt\n[ ] Updating my mailing address\n[ ] Question about my bill\n\nMy phone number is: _________________\n\nThank you,\n{owner_name}"
+
+financial:
+  # Distribution Percentages (0.0 to 1.0)
+  real_estate:
+    township_share: 0.80
+    county_share: 0.15
+    school_share: 0.05
+  per_capita:
+    township_share: 0.50
+    school_share: 0.50
+
+bank_accounts:
+  township:
+    name: "Tioga Township General Fund"
+    account_number: "123456789"
+  county:
+    name: "Tioga County Tax Account"
+    account_number: "987654321"
+  school_district:
+    name: "Tioga School District Taxes"
+    account_number: "112233445"
+
+system:
+  database_file: "tioga_tax.db"
+  schema_file: "schema.sql"
+  backup_dir: "backups"
+  bill_output_dir: "tax_bills"
+  log_file: "tax_commander.log"
+
+defaults:
+  bill_issue_date: "2025-03-01"
