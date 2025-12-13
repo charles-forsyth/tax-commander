@@ -1,0 +1,3 @@
+## 2024-09-05 - Incomplete Optimizations are Breaking Changes
+**Learning:** I identified an inefficient function that repeatedly connected to the database, but `grep` revealed no usages, suggesting it was dead code. My "fix" removed connection management, which would have crashed the app if the function were ever called. The code review correctly flagged this as a breaking change.
+**Action:** Before optimizing, I must verify that the code is on a hot path and not dead. If I can't find any usages, I should either confirm it's dead code and remove it entirely or leave it alone. An incomplete optimization is worse than none at all.
